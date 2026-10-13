@@ -130,7 +130,7 @@ async function panel(){show("hPanel");const url=location.origin+location.pathnam
  if(!OK){$("hs").textContent="Paste your Firebase URL in the code first.";return}
  st=await api("/state");if(!st){st={session:"s"+Date.now().toString(36),open:false,closed:false};await api("/state","PUT",st)}
  hostPoll();clearInterval(hT);hT=setInterval(hostPoll,2000)}
-async function cnt(path){const r=await api(`${path}/${st.session}?shallow=true`);return r?Object.keys(r).length:0}
+async function cnt(path){try{const r=await (await fetch(`${DB}${path}/${st.session}.json?shallow=true`)).json();return r&&typeof r=="object"?Object.keys(r).length:0}catch(e){return 0}}
 async function hostPoll(){$("nJ").firstChild.nodeValue=await cnt("/players");$("nF").firstChild.nodeValue=await cnt("/results");
  $("hs").textContent=st.open?"Game is running. Players are answering.":st.closed?"Entries closed.":"Waiting. Show the QR code, then press Start."}
 $("bStart").onclick=async()=>{st.open=true;st.closed=false;await api("/state","PUT",st);hostPoll()};
