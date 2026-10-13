@@ -25,7 +25,7 @@ input{width:min(340px,100%);padding:15px 18px;border-radius:14px;border:1px soli
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .o{display:flex;gap:14px;align-items:center;text-align:left;background:var(--card);border:1.5px solid var(--bd);color:var(--tx);border-radius:18px;padding:16px;font:600 17px 'IBM Plex Sans';cursor:pointer;min-height:74px}
 .o:hover:not(:disabled){border-color:var(--or)}.o span{flex:0 0 36px;height:36px;border-radius:11px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font:700 16px 'Space Grotesk'}
-.o.sel{background:rgba(255,138,31,.28);border-color:var(--or)}
+.o.sel{background:rgba(47,123,255,.32);border-color:#5b9bff}.o:disabled{cursor:default}.o:disabled:not(.sel){opacity:.6}
 .big{font:700 clamp(70px,16vw,150px)/1 'Space Grotesk'}
 .hg{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center}.qrb{background:#fff;border-radius:20px;padding:16px;display:inline-block}
 .stat{font:700 54px 'Space Grotesk';line-height:1}.stat small{display:block;font:500 15px 'IBM Plex Sans';color:var(--mut);margin-top:4px}
@@ -112,10 +112,10 @@ function ask(){done=false;const q=Q[i],lv=L[q.l];$("lv").textContent=lv.n;$("lv"
  order=sh(q.o.map((t,k)=>({t,ok:k==0})));$("opts").innerHTML="";order.forEach((x,k)=>{const b=document.createElement("button");b.className="o";b.innerHTML=`<span>${"ABCD"[k]}</span>${esc(x.t)}`;b.onclick=()=>pick(k);$("opts").appendChild(b)});
  [...$("bars").children].forEach((b,k)=>{if(k==i)b.style.background="rgba(255,255,255,.6)"});
  tl=lv.t;t0=performance.now();clearInterval(iv);tick();iv=setInterval(()=>{tl--;tick();if(tl<=5&&tl>0)beep(500,.08);if(tl<=0)pick(-1)},1000)}
-function tick(){const t=L[Q[i].l].t;$("tm").textContent=tl;$("rg").style.strokeDashoffset=207.3*(1-tl/t);$("rg").style.stroke=tl<=5?"#ef4444":"#ff8a1f"}
+function tick(){const t=L[Q[i].l].t;$("tm").textContent=tl;$("rg").style.strokeDashoffset=207.3*(1-tl/t);$("rg").style.stroke=tl<=5?"#ffb020":"#ff8a1f"}
 function pick(k){if(done)return;done=true;clearInterval(iv);const lim=L[Q[i].l].t*1000,dt=Math.min(performance.now()-t0,lim),ok=k>=0&&order[k].ok;
  if(ok){c++;T+=dt}else T+=lim; // wrong or no answer counts as the full time limit
- $("bars").children[i].style.background=ok?"#22c55e":"#ef4444";[...$("opts").children].forEach((b,j)=>{b.disabled=true;if(j==k)b.classList.add("sel")});beep(ok?880:300,.15);
+ $("bars").children[i].style.background="#2f7bff";[...$("opts").children].forEach((b,j)=>{b.disabled=true;if(j==k)b.classList.add("sel")});beep(700,.12);
  setTimeout(()=>{i++;i<Q.length?ask():finish()},650)}
 async function finish(){show("sDone");$("mine").textContent=`You got ${c} / ${Q.length} right. The results will be revealed live by the host.`;
  if(OK)await api(`/results/${session}/${pid}`,"PUT",{n:name,c,t:Math.round(T)})}
