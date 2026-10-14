@@ -65,14 +65,14 @@ body::before{background:#2f7bff;left:-18vmax;top:-12vmax}body::after{background:
 <section id="hLogin" class="glass hero hid"><h2 class="g" style="margin-top:0">Accès animateur</h2><input id="pin" type="password" placeholder="Code animateur"><br><button class="btn" id="pinGo">Entrer</button></section>
 <section id="hPanel" class="glass hid"><div class="hg"><div style="text-align:center"><div class="qrb" id="qr"></div><div id="url" style="font-size:12px;color:var(--mut);margin-top:8px;word-break:break-all;max-width:260px"></div></div>
 <div><div class="g" style="color:var(--or);font-weight:700;margin-bottom:10px;letter-spacing:2px">FUNNY GAMER · SCANNE POUR JOUER</div><div class="stat" id="nJ">0<small>joueurs connectés</small></div>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="bStart">▶ Lancer le jeu</button><button class="btn s" id="bNew">↻ Nouvelle session</button></div><p style="color:var(--mut);margin:12px 0 0">15 questions · 15 s pour répondre · après chaque résultat, tu cliques sur « Question suivante ».</p><div id="cn" class="g" style="margin-top:10px"></div></div></div></section>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="bStart">▶ Lancer le jeu</button><button class="btn s" id="bNew">↻ Nouvelle session</button></div><p style="color:var(--mut);margin:12px 0 0">15 questions · 15 s pour répondre · c'est toi qui contrôles : tu cliques pour afficher le résultat, puis pour passer à la question suivante (pour tous les étudiants en même temps).</p><div id="cn" class="g" style="margin-top:10px"></div></div></div></section>
 </div>
 <button class="btn hid" id="skip" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:20;margin:0;font-size:21px;padding:16px 34px"></button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const DB="https://ieee-quiz-a8639-default-rtdb.europe-west1.firebasedatabase.app"; // same database as the quiz
 const HOST_PIN="IEEE2026";
-const ANS=15, WAIT=3, RES=1e7, N=15; // seconds to answer / drumroll / (results wait for the host click). N = questions per session
+const ANS=15, RES=1e7, N=15; // seconds to answer / (everything after the 15 s waits for the host click). N = questions per session
 const COL=["#ff8a1f","#2f7bff","#22c55e","#a855f7"];
 const CATS=[{n:"🏫 Campus life",c:"#ff8a1f"},{n:"📚 Exams & deadlines",c:"#2f7bff"},{n:"👥 Teamwork",c:"#a855f7"},{n:"🌪️ Daily chaos",c:"#ec4899"},{n:"🔮 What if…",c:"#22c55e"},{n:"⚡ IEEE",c:"#ffd25a"}];
 // [category, big emoji(s), meme caption, question, options separated by |, animation: s=shake b=bounce p=pulse r=spin]. Optional real image: add {img:"images/x.jpg"} after the map.
@@ -165,15 +165,17 @@ const loop=async()=>{try{await pollP()}finally{setTimeout(loop,1100+Math.random(
 /* ===== HOST ===== */
 const setS=o=>{st={session:st.session,...o};return api("/state","PUT",st)};
 const newS=async()=>{st={session:"f"+Date.now().toString(36),phase:"lobby",qi:-1};await api("/state","PUT",st)};
-const sleep=s=>new Promise(r=>{let n=s*10;const t=setInterval(()=>{if(skip||--n<=0){skip=false;clearInterval(t);r()}},100)});
+const sleep=s=>new Promise(r=>{let n=s*10;const t=setInterval(()=>{if(skip||--n<=0){const c=skip;skip=false;clearInterval(t);r(c)}},100)}); // true = host clicked
 const lab=t=>$("skip").textContent=t;
 const cnt=async p=>{const r=await api(p,"GET",undefined,"?shallow=true");return r&&typeof r=="object"?Object.keys(r).length:0};
 async function run(){const S=st.session,ord=pick();hist=[];
  for(let p=0;p<ord.length;p++){const i=ord[p];
   await setS({phase:"q",qi:i,pos:p,tot:ord.length,dur:ANS,t0:{".sv":"timestamp"}});showQ(i,p,ord.length);lab("⏩ Fermer les réponses");
   const tot=Math.max(1,+$("nJ").firstChild.nodeValue||1),ci=setInterval(async()=>{const n=await cnt(`/ans/${S}/${i}`);$("st").textContent=`✋ ${n} / ${tot} ont répondu`;$("abf").style.width=Math.min(100,n/tot*100)+"%"},1500);
-  await sleep(ANS);clearInterval(ci);clearInterval(iv);
-  await setS({phase:"wait",qi:i});$("st").textContent="🥁 Drumroll…";lab("⏩ Afficher le résultat");drum();await sleep(WAIT);
+  skip=false;const early=await sleep(ANS);clearInterval(iv);
+  if(!early){lab("📊 Afficher le résultat");$("st").textContent="⏱ Temps écoulé — clique pour afficher le résultat";await sleep(RES)} // after the 15 s: wait for the host click
+  clearInterval(ci);
+  await setS({phase:"wait",qi:i});drum();
   const a=await api(`/ans/${S}/${i}`)||{},t=Q[i].o.map(()=>0);Object.values(a).forEach(k=>{if(t[k]!==undefined)t[k]++});
   await setS({phase:"res",qi:i,tally:t});hist.push({i,t});pie(i,t);lab(p==ord.length-1?"🏁 Terminer le jeu":"⏭ Question suivante");await sleep(RES)}
  await setS({phase:"end"});endHost()}
