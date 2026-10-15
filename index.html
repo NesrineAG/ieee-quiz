@@ -101,7 +101,12 @@ let session="",pid="",name="",phase="home",pollT,c=0,T=0,i=0,order=[],t0=0,tl=0,
 async function join(){name=$("nm").value.trim();if(!name){$("nm").focus();return}
  if(OK){const st=await api("/state");if(!st){alert("The game is not ready yet. Ask the host.");return}session=st.session;
   if(localStorage.getItem("ieeeq-"+session)){alert("You already played this session on this device.");return}
-  pid=Math.random().toString(36).slice(2,10);await api(`/players/${session}/${pid}`,"PUT",{n:name});localStorage.setItem("ieeeq-"+session,"1")}
+  const key=name.normalize("NFC").toLowerCase().replace(/\s+/g," ");
+  pid="p"+Array.from(new TextEncoder().encode(key)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  let r;try{r=await fetch(`${DB}/players/${session}/${pid}.json`,{method:"PUT",headers:{"if-match":"null_etag"},body:JSON.stringify({n:name})})}catch(e){alert("Connection error. Try again.");return}
+  if(r.status==412){alert("This name is already taken. Please choose another unique name.");$("nm").focus();$("nm").select();return}
+  if(!r.ok){alert("Connection error. Try again.");return}
+  localStorage.setItem("ieeeq-"+session,"1")}
  $("who").textContent=name;phase="lobby";show("sLobby");if(!OK)return countdown();pollT=setInterval(poll,2000);poll()}
 async function poll(){if(phase!="lobby")return;const st=await api("/state");if(!st)return;
  if(st.session!=session){clearInterval(pollT);phase="home";show("sHome");return}
